@@ -1,3 +1,0 @@
-This repo is dedicated for applications of WordStream, with new features for each new domain.
-
---H

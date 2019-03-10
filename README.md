@@ -1,2 +1,2 @@
-# WS
-Applications of WordStream
+# WordStream
+https://idatavisualizationlab.github.io/WordStream/
