@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ADL</title>
+    <script src="../lib/d3.min.js"></script>
+</head>
+<body>
+<script>
+    var topics = ["Extremist Murder", "Terrorist Plot/Attack", "Extremist/Police Shootout", "Anti-Semitic Incident",
+        "White Supremacist Event", "White Supremacist Propaganda"];
+
+    d3.json("../data/ADL/ADL.json", function (error, inputData) {
+        if (error) {
+            console.log(error);
+        }
+        else {
+
+            console.log(inputData);
+        }
+    });
+
+
+    function processSudden(data){
+        topics.forEach((topic, i) => {
+            for (var j = 1; j < data.length; j++) {
+                data[j]["words"][topic].forEach((word, k) => {
+                    var prev = 0;
+                    if (data[j - 1]["words"][topic].find(d => d.text === word.text)) {
+                        prev = data[j - 1]["words"][topic].find(d => d.text === word.text).frequency;
+                    }
+                    word.sudden = (word.frequency + 1) / (prev + 1)
+                })
+            }
+        });
+        return data;
+    }
+</script>
+</body>
+</html>

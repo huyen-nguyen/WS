@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>WordStream</title>
+    <script src="../lib/d3.min.js"></script>
+    <script src="../lib/loaddata.js"></script>
+    <script src="../lib/d3.layout.wordstream.js"></script>
+</head>
+<body>
+<script>
+    var topics = ["Extremist Murder", "Terrorist Plot/Attack", "Extremist/Police Shootout", "Anti-Semitic Incident",
+        "White Supremacist Event", "White Supremacist Propaganda"];
+
+    function buildWords(yearRecord, date, top) {
+        var obj = {};
+        topics.forEach((topic,j) => {
+            obj[topic] = [];
+            yearRecord.values.forEach((event, i) => {
+                console.log(topic);
+                if (yearRecord.values[i].key == topic) {
+                    obj[topic] = getWords(yearRecord.values[i]["values"], topic, date, top)
+                }
+            });
+        });
+
+        return obj;
+    }
+
+    function getWords(array, topic, date) {     // per a certain topic at a time
+        var words = [];
+        var freq = {};
+        array.forEach(d => {
+            var met = {};
+            d["words"].forEach(term => {         // create true properties met object
+                met[term] = false;
+            });
+
+            d["words"].forEach(term => {
+                freq[term] = (freq[term] == undefined) ? 1 : freq[term] + 1;
+            });
+        });
+
+        var keys = d3.keys(freq);                   // push into standard format
+        for (var i = 0; i < keys.length; i++) {
+            var term = keys[i];
+            words.push({
+                sudden: 1,
+                frequency: freq[term],
+                text: term,
+                id: term + "_" + date + "_" + topic,
+                topic: topic
+            })
+        }
+        words.sort(function (a, b) {    //sort the terms by fatality
+            return b.frequency - a.frequency;
+        });
+
+        return words;
+    }
+
+    function loadData(inputData){
+        var groupData = d3.nest()
+            .key(d => d["state"])
+            .key(d => d["time"])
+            .entries(inputData)
+            //(1) - get all data
+            //     .map(d => {
+            //     return {
+            //         state: d.key,
+            //         words: buildWords(d, d.key)     // d.key = date(year)
+            //     }
+            // })
+        ;
+
+        console.log("groupData:");
+        console.log(groupData);
+
+        // (2) - count event frequency -------------------------------------
+        // sort by topic
+        // var sortedData = [];
+        // // init sortedData
+        // groupData.forEach((yearRecord, i) => {
+        //     var events = [];
+        //     topics.forEach((topic, j) => {
+        //         events.push({
+        //             key: topic,
+        //             values: []
+        //         })
+        //     });
+        //     sortedData.push({
+        //         key: yearRecord["key"],
+        //         values: events
+        //     })
+        // });
+        //
+        // // assign values to sortedData
+        // groupData.forEach((yearRecord, i) => {
+        //     topics.forEach((topic, j) => {
+        //         yearRecord["values"].forEach((event, k) => {
+        //             if (topic === event["key"]){
+        //                 sortedData[i].values[j] = JSON.parse(JSON.stringify(event));
+        //             }
+        //         })
+        //     })
+        // });
+        //
+        // console.log("sortedData:");
+        // console.log(sortedData);
+        //
+        // var eventFrequency = [];
+        // sortedData.forEach((yearRecord, i) => {
+        //     var obj = {};
+        //     yearRecord.values.forEach((event, j) => {
+        //         obj[event["key"]] = event["values"].length;
+        //     });
+        //     eventFrequency.push(obj);
+        // });
+        //
+        // console.log("event freq:");
+        // console.log(JSON.parse(JSON.stringify(eventFrequency)));
+    }
+
+
+    // -----------------------------Africa-----------------------------------
+
+    d3.json("../data/HEAT/month.json", function (error, inputData) {
+        if (error) {
+            console.log(error);
+        }
+        else {
+            console.log(inputData)
+            loadData(inputData);
+
+            // (2)
+            // loadData(inputData);
+        }
+    });
+
+</script>
+</body>
+</html>

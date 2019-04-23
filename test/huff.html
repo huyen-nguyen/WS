@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Huff</title>
+    <script src="../lib/d3.min.js"></script>
+    <script src="../lib/loaddata.js"></script>
+    <script src="../lib/d3.layout.wordstream.js"></script>
+</head>
+<body>
+<script>
+
+    var partialWordList = ["january", "february",
+        "march", "april", "may", "june", "july", "august", "september", "october", "november", "december", "1st",
+        "2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "9th", "10th", "0", "1", "2", "3", "4", "5", "6", "7", "8",
+        "9"];
+    var csvContent = "";
+    var topics = ["Assassination",
+        "Hijacking",
+        "Kidnapping",
+        "Barricade Incident",
+        "Bombing/Explosion",
+        "Armed Assault",
+        "Unarmed Assault",
+        "Facility/Infrastructure Attack",
+        "Unknown"];
+
+    function checkInclude(word){
+        var flag = true;
+        partialWordList.forEach(d => {
+            if (word.includes(d)) flag = false;
+        });
+        return flag;
+    }
+    function loadGeneralData(inputData){
+        console.log(inputData);
+        var reducedData = [], obj = {};
+        inputData.forEach(d => {
+            attrOmit.forEach(attr => {  // keep only wanted attributes
+                delete d[attr];
+            });
+            // if summary empty, delete
+            if (d["summary"].length !== 0) {
+                d["summary"] = d["summary"].trim();
+                obj[d["summary"]] = d;
+            }
+        });
+        for (var key in obj){
+            reducedData.push(obj[key]);
+        }
+
+        reducedData.forEach((d, i) => {
+            var event = d["attacktype1_txt"];        // change event name
+            if (event === "Hostage Taking (Kidnapping)") {
+                d["attacktype1_txt"] = "Kidnapping";
+            }
+            else if (event === "Hostage Taking (Barricade Incident)") {
+                d["attacktype1_txt"] = "Barricade Incident";
+            }
+
+            d.keywords = [];
+
+            d["summary"].toLowerCase().split(" ").forEach(w => {
+                w = w.trim().replace(/\.|\,|\(|\)|\;|\:|\[|\]|\&|\-|\!|\?|\#|\"|\'/gi, '').replace(/s$/g, '');
+                if ((stopWordList.find(wm => wm == w) == undefined) && (checkInclude(w)) && isNaN(w)) {
+                    d["keywords"].push(w);
+                }
+            });
+
+            if (d["nkill"].length = 0) {d["nkill"] = 0;}
+        });
+        console.log(reducedData);
+        return reducedData;
+    }
+
+    function buildWords(yearRecord, date, top) {
+        var obj = {};
+        topics.forEach((topic,j) => {
+            obj[topic] = [];
+            yearRecord.values.forEach((event, i) => {
+                console.log(topic);
+                if (yearRecord.values[i].key == topic) {
+                    obj[topic] = getWords(yearRecord.values[i]["values"], topic, date, top)
+                }
+            });
+        });
+
+        return obj;
+    }
+
+    function getWords(array, topic, date) {     // per a certain topic at a time
+        var words = [];
+        var freq = {}, fatal = {};
+        array.forEach(d => {
+            var met = {};
+            d["keywords"].forEach(term => {         // create true properties met object
+                met[term] = false;
+            });
+
+            d["keywords"].forEach(term => {
+                freq[term] = (freq[term] == undefined) ? 1 : freq[term] + 1;
+                while (!met[term]){
+                    fatal[term] = (fatal[term] == undefined) ? parseInt(d["nkill"]) : fatal[term] + parseInt(d["nkill"]);
+                    met[term] = true;
+                }
+            });
+        });
+
+        var keys = d3.keys(freq);                   // push into standard format
+        for (var i = 0; i < keys.length; i++) {
+            var term = keys[i];
+            words.push({
+                sudden: 0,
+                fatality: fatal[term],
+                frequency: freq[term],
+                text: term,
+                id: term + "_" + date + "_" + topic,
+                topic: topic
+            })
+        }
+        words.sort(function (a, b) {    //sort the terms by fatality
+            return b.fatality - a.fatality;
+        });
+
+        return words;
+    }
+
+    function loadSuddenData(inputData){
+        var inputFormat = d3.time.format('%Y-%m-%dT%H:%M:%S');
+
+        inputData.forEach(d => {
+
+        })
+
+        var groupData = d3.nest()
+            .key(d => d["time"])
+            .key(d => d["attacktype1_txt"])
+            .entries(inputData)
+        // (1) - get all data
+        //     .map(d => {
+        //     return {
+        //         date: d.key,
+        //         words: buildWords(d, d.key)     // d.key = date(year)
+        //     }
+        // })
+        ;
+
+        console.log("groupData:");
+        console.log(groupData);
+
+        // (2) - count event frequency -------------------------------------
+        // sort by topic
+        // var sortedData = [];
+        // // init sortedData
+        // groupData.forEach((yearRecord, i) => {
+        //     var events = [];
+        //     topics.forEach((topic, j) => {
+        //         events.push({
+        //             key: topic,
+        //             values: []
+        //         })
+        //     });
+        //     sortedData.push({
+        //         key: yearRecord["key"],
+        //         values: events
+        //     })
+        // });
+        //
+        // // assign values to sortedData
+        // groupData.forEach((yearRecord, i) => {
+        //     topics.forEach((topic, j) => {
+        //         yearRecord["values"].forEach((event, k) => {
+        //             if (topic === event["key"]){
+        //                 sortedData[i].values[j] = JSON.parse(JSON.stringify(event));
+        //             }
+        //         })
+        //     })
+        // });
+        //
+        // console.log("sortedData:");
+        // console.log(sortedData);
+        //
+        // var eventFrequency = [];
+        // sortedData.forEach((yearRecord, i) => {
+        //     var obj = {};
+        //     yearRecord.values.forEach((event, j) => {
+        //         obj[event["key"]] = event["values"].length;
+        //     });
+        //     eventFrequency.push(obj);
+        // });
+        //
+        // console.log("event freq:");
+        // console.log(JSON.parse(JSON.stringify(eventFrequency)));
+        // --------------------------------------------------------
+
+
+        // (1) - get all data
+        // var suddenData = processSuddenFreq(groupData);  // sort by sudden
+        // suddenData.forEach((data) => {
+        //     topics.forEach((topic) => {
+        //         data["words"][topic] = data["words"][topic]
+        //             .sort((a,b) => b["sudden"] - a["sudden"]);
+        //     })
+        // });
+        // return suddenData;
+
+    }
+
+    d3.tsv("../data/Huff/Huffington.tsv", function (error, inputData) {
+        if (error) {
+            console.log(error);
+        }
+        else {
+            // (1)
+            console.log(inputData)
+            var allData = loadSuddenData(inputData);    // same input, output general
+
+            console.log(allData);
+
+            // (2)
+            // loadSuddenData(inputData);
+
+        }
+    });
+
+</script>
+</body>
+</html>

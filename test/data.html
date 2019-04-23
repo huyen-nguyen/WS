@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="../lib/d3.min.js"></script>
+</head>
+<body>
+<script>
+
+
+        d3.tsv("../data/EmptyWheel.tsv", function (error, data) {
+            if (error) {
+                console.log(error);
+            }
+            else {
+                console.log(data);
+            }
+        });
+
+</script>
+</body>
+</html>

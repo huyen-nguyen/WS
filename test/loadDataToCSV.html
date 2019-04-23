@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>WordStream</title>
+    <script src="../lib/d3.min.js"></script>
+</head>
+<body>
+<script>
+
+    var csvContent = "";
+    d3.csv("../data/asia.csv", function (error, inputData) {
+        if (error) {
+            console.log(error);
+        }
+        else {
+            var attrOmit = ["iso", "event_id_cnty",
+                "event_id_no_cnty", "event_date",
+                "time_precision", "actor1",
+                "assoc_actor_1", "inter1", "actor2",
+                "assoc_actor_2", "inter2", "interaction",
+                "region", "country", "admin1", "admin2",
+                "admin3", "location", "latitude", "longitude",
+                "geo_precision", "source", "source_scale",
+                "timestamp", "iso3"];
+
+            var reducedData = [],
+                obj = {};
+
+            inputData.forEach(d => {
+                attrOmit.forEach(attr => {  // keep only wanted attributes
+                    delete d[attr];
+                });
+                d["notes"] = d["notes"].trim();     // remove black space 2 sides
+                obj[d["notes"]] = d;                // remove duplicates
+            });
+            console.log("inputData length: " + inputData.length);
+            for (var key in obj) {                   // write to new array
+                reducedData.push(obj[key]);
+            }
+            console.log("reducedData length: " + reducedData.length);
+
+            reducedData.forEach((d, i) => {
+                var event = d["event_type"];        // change event name
+                if ((event === "Battle-No change of territory") ||
+                    (event === "Battle-Non-state actor overtakes territory") ||
+                    (event === "Battle-Government regains territory")) {
+                    d["event_type"] = "Battles";
+                }
+                else if ((event === "Strategic development") ||
+                    (event === "Headquarters or base established") ||
+                    (event === "Non-violent transfer of territory") ||
+                    (event === "Remote explosive/landmine/IED")) {
+                    d["event_type"] = "Others";
+                }
+
+                d["notes"] = d["notes"].replace(/,/g, '');
+
+            });
+            reducedData.reverse();
+            console.log(reducedData);
+
+            // var keys = d3.keys(reducedData[0]);
+            // for (let k in keys) {
+            //     csvContent += keys[k].concat(k == keys.length- 1 ? "":",");
+            // }
+            // csvContent = csvContent.concat("\n");
+            // reducedData.forEach((d,i) => {
+            //     for (var j in keys){
+            //         if (keys[j] == "notes") {d[keys[j]] = "\"" + d[keys[j]] + "\""};
+            //         if (keys[j] == "keywords") {
+            //             console.log(d[keys[j]]);
+            //         }
+            //         csvContent += d[keys[j]].concat(j == keys.length- 1 ? "":",");
+            //     }
+            //     csvContent = csvContent.concat("\n");
+            // });
+            // console.log(csvContent);
+
+        }
+    });
+
+</script>
+</body>
+</html>
